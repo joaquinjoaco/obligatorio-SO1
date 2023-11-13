@@ -1,3 +1,13 @@
+todo: repostero.o
+	gcc -o main repostero.o -lpthread -lrt
+
+repostero.o: repostero.c
+	gcc -c repostero.c
+
+limpiar:
+	rm -f *.o
+	rm -f main
+
 # todo: main.o sistema.o arbolg.o lista.o
 # 	g++ -o main main.o sistema.o arbolg.o lista.o
 
@@ -12,7 +22,3 @@
 
 # lista.o: lista.cpp lista.h
 # 	g++ -c lista.cpp
-
-# limpiar:
-# 	rm -f *.o
-# 	rm -f main
