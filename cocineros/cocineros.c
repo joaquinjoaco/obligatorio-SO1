@@ -4,16 +4,19 @@
 //
 // cocineros.c
 //
-// Autor: Joaquin Gomez Leites (5.398.934-6)
+// Autor: Joaquín Gómez Leites (5.398.934-6)
 // --------------------------------------------
 
 #include <fcntl.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 int main() {
