@@ -22,10 +22,11 @@
 int main() {
     // Unlinks de semáforos por las dudas.
     sem_unlink("sem_heladera");
+    sem_unlink("sem_mesada");
     sem_unlink("sem_mozo");
     sem_unlink("sem_platos");
 
-    // ============ RECURSOS COMPARTIDOS (MESADA, HELADERA) ============
+    // ============ RECURSOS COMPARTIDOS (MESADA, HELADERA,PLATOS DEL DÍA) ============
 
     int SIZE = 4096;  // Tamaño de la memoria compartida 4096 bytes.
 
@@ -61,11 +62,13 @@ int main() {
     // ========================================================
 
     // ====== Semáforos  HELADERA, MOZO Y PLATOS DEL DIA ======
-    sem_t *sem_heladera, *sem_mozo, *sem_platos;
+    sem_t *sem_heladera, *sem_mozo, *sem_platos, *sem_mesada;
     // El valor del semáforo de la heladera representa la cantidad de espacios libres en la heladera.
-    sem_heladera = sem_open("sem_heladera", O_CREAT, 0644, 25);  // sem shm inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
-    sem_mozo = sem_open("sem_mozo", O_CREAT, 0644, 1);           // sem mozo inicilizado en 1.
-    sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);       // sem platos del día inicializado en 1.
+    sem_heladera = sem_open("sem_heladera", O_CREAT, 0644, 25);  // sem heladera contador inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
+    sem_mozo = sem_open("sem_mozo", O_CREAT, 0644, 1);           // sem mozo binario inicilizado en 1.
+    sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);       // sem platos del día binario inicializado en 1.
+    // El valor del semáforo de la mesada representa la cantidad de espacios libres en ella.
+    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27.
     // ========================================================
 
     // ================== Codigo del mozo =====================
@@ -76,16 +79,20 @@ int main() {
     // Cerramos los descriptores de archivo de memoria compartida.
     close(shm_fd_mesada);
     close(shm_fd_heladera);
+    close(shm_fd_platos);
 
     // Eliminamos las regiones de memoria compartida.
     shm_unlink("heladera");
     shm_unlink("mesada");
+    shm_unlink("platos");
 
     // Cerramos los semáforos.
     sem_close(sem_heladera);
     sem_unlink("sem_heladera");
+
     sem_close(sem_mozo);
     sem_unlink("sem_mozo");
+
     sem_close(sem_platos);
     sem_unlink("sem_platos");
     // ========================================================

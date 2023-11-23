@@ -35,7 +35,7 @@ int main() {
     sem_unlink("sem_heladera");
     sem_unlink("sem_platos");
 
-    // ============ RECURSOS COMPARTIDOS (MESADA, HELADERA, PLATOS DEL DIA) ============
+    // ============ RECURSOS COMPARTIDOS (MESADA, HELADERA, PLATOS DEL DÍA) ============
 
     int SIZE = 4096;  // Tamaño de la memoria compartida 4096 bytes.
 
@@ -66,9 +66,9 @@ int main() {
     // ==== Semáforos HELADERA, REPOSTERO Y PLATOS DEL DIA ====
     sem_t *sem_heladera, *sem_repostero, *sem_platos;
     // El valor del semáforo de la heladera representa la cantidad de espacios libres en la heladera.
-    sem_heladera = sem_open("sem_heladera", O_CREAT, 0644, 25);   // sem shm inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
-    sem_repostero = sem_open("sem_repostero", O_CREAT, 0644, 1);  // sem repostero inicilizado en 1.
-    sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);        // sem platos del día inicializado en 1.
+    sem_heladera = sem_open("sem_heladera", O_CREAT, 0644, 0);    // sem heladera contador inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
+    sem_repostero = sem_open("sem_repostero", O_CREAT, 0644, 1);  // sem repostero binario inicilizado en 1.
+    sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);        // sem platos del día binario inicializado en 1.
 
     // ========================================================
 
@@ -114,15 +114,21 @@ int main() {
     // ================ FINAL DEL PROGRAMA ====================
     // Cerramos el descriptor de archivo de memoria compartida.
     close(shm_fd_heladera);
+    close(shm_fd_platos);
 
     // Eliminamos la región de memoria compartida.
     shm_unlink("heladera");
+    shm_unlink("platos");
 
     // Cerramos los semáforos.
     sem_close(sem_heladera);
     sem_unlink("sem_heladera");
+
     sem_close(sem_repostero);
     sem_unlink("sem_repostero");
+
+    sem_close(sem_platos);
+    sem_unlink("sem_platos");
     // ========================================================
 
     return 0;
