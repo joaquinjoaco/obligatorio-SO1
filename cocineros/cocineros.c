@@ -19,6 +19,16 @@
 #include <time.h>
 #include <unistd.h>
 
+void preparar_plato() {
+    // Prepara un flan (dummy).
+    printf("Preparando plato...\n");
+    // srand(time(NULL));
+    // int randomSleep = rand() % 10;
+    // sleep(randomSleep);
+    sleep(1);
+    printf("Plato listo.\n");
+}
+
 int main() {
     // Unlinks de semáforos por las dudas.
     sem_unlink("sem_mesada");
@@ -37,7 +47,7 @@ int main() {
     int *platos_del_dia;  // Puntero para acceder a la memoria compartida (heladera).
 
     // Abrimos las region de memoria compartida (la mesada compartida entre cocineros y mozos).
-    mesada = shm_open("mesada", O_CREAT | O_RDWR, 0666);
+    shm_fd_mesada = shm_open("mesada", O_CREAT | O_RDWR, 0666);
     shm_fd_platos = shm_open("platos", O_CREAT | O_RDWR, 0666);
 
     // Configuramos los tamaño de la memoria compartida 4096 bytes.
@@ -55,16 +65,68 @@ int main() {
     // ===== Semáforos COCINERO, MESADA Y PLATOS DEL DIA =====
     sem_t *sem_cocinero, *sem_mesada, *sem_platos;
     // El valor del semáforo de la heladera representa la cantidad de espacios libres en la heladera.
-    sem_cocinero = sem_open("sem_cocinero", O_CREAT, 0644, 25);  // sem cocinero inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
+    sem_cocinero = sem_open("sem_cocinero", O_CREAT, 0644, 1);  // sem cocinero inicilizado en 0.
     // El valor del semáforo de la mesada representa la cantidad de espacios libres en ella.
-    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27 (la cantina abre con la mesada vacía. Todos los espacios libres).
+    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27 (la cantina abre con la mesada vacía. 27 espacios libres)
     sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);   // sem platos del día inicializado en 1.
-
     // ========================================================
 
-    // ================ Codigo del cocinero ===================
+    // ================ Código del cocinero ===================
     // TODO: CICLO DE LA CANTINA 12 MEDIODIA.
-    // Tomamos el valor actual del semáforo de la heladera.
+
+    for (int i = 0; i < 3; i++)
+    // SE CREAN 3 COCINEROS.
+    {
+        if (fork() == 0) {  // desde el hijo (cocinero)
+            printf("COCINERO(%d) pid: %d | ppid: %d \n", i, getpid(), getppid());
+
+            // Tomamos el valor actual del semáforo de la mesada.
+            int valor_mesada;
+            sem_getvalue(sem_mesada, &valor_mesada);
+
+            // ¿Está vacía la mesada?
+            if (valor_mesada == 0) {
+                // Está llena (0 espacios libres).
+                printf("Mesada llena\n");
+            } else {
+                // Está vacía (27 espacios libres).
+                // Toma el valor actual del sem_mesada.
+                sem_getvalue(sem_mesada, &valor_mesada);
+
+                // Procede a llenar la mesada.
+                while (valor_mesada != 0) {
+                    if (*platos_del_dia == 180) {
+                        printf("se hicieron los 180 platos");
+                        sem_wait(sem_cocinero);
+                    } else {
+                        // prepara el plato, función dummy (espera un tiempo aleatorio).
+                        preparar_plato();
+                        // Secciones críticas.
+                        sem_wait(sem_cocinero);
+                        *mesada = *mesada + 1;
+                        printf("Quedan %d espacios libres en la mesada\n", valor_mesada);
+                        sem_wait(sem_mesada);  // 1 espacio menos en la mesada.
+                        sem_post(sem_cocinero);
+
+                        // actualiza los platos del día.
+                        sem_wait(sem_platos);
+                        *platos_del_dia = *platos_del_dia + 1;
+                        printf("Plato numero %d del día\n", *platos_del_dia);
+                        sem_post(sem_platos);
+
+                        sem_getvalue(sem_mesada, &valor_mesada);
+                    }
+                }
+
+                sem_getvalue(sem_mesada, &valor_mesada);
+                if (valor_mesada == 0) {
+                    printf("Mesada llena\n");
+                }
+            }
+
+            exit(0);
+        }
+    }
 
     // ================ FINAL DEL PROGRAMA ====================
     // Cerramos los descriptores de archivo de memoria compartida.

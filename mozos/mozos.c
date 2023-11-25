@@ -19,6 +19,25 @@
 #include <time.h>
 #include <unistd.h>
 
+void tomar_pedido(int tipo_pedido, int cantidad) {
+    // TOMA UN PEDIDO.
+    printf("Tomando pedido...\n");
+
+    srand(time(NULL));
+    tipo_pedido = rand() % 2;
+    if (tipo_pedido == 0) {
+        // pidieron flanes.
+        cantidad = rand() % (6 + 1 - 1) + 1;  // máximo de 6 flanes, mínimo de 1.
+        printf("%d Flanes en camino.\n", cantidad);
+    } else {
+        // pidieron albóndigas.
+        cantidad = rand() % (4 + 1 - 1) + 1;  // máximo de 4 flanes, mínimo de  1.
+        printf("%d Platos de albóndiga en camino.\n", cantidad);
+    }
+
+    sleep(1);
+}
+
 int main() {
     // Unlinks de semáforos por las dudas.
     sem_unlink("sem_heladera");
@@ -68,12 +87,81 @@ int main() {
     sem_mozo = sem_open("sem_mozo", O_CREAT, 0644, 1);           // sem mozo binario inicilizado en 1.
     sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);       // sem platos del día binario inicializado en 1.
     // El valor del semáforo de la mesada representa la cantidad de espacios libres en ella.
-    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27.
+    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27 (la cantina abre con la mesada vacía. 27 espacios libres).
     // ========================================================
 
-    // ================== Codigo del mozo =====================
+    // ================== Código del mozo =====================
     // TODO: CICLO DE LA CANTINA 12 MEDIODIA.
-    // Tomamos el valor actual del semáforo de la heladera.
+
+    for (int i = 0; i < 5; i++)
+    // SE CREAN 5 MOZOS.
+    {
+        if (fork() == 0) {  // desde el hijo (mozo)
+            printf("MOZO(%d) pid: %d | ppid: %d \n", i, getpid(), getppid());
+
+            int valor_mesada;
+            int valor_heladera;
+            // Toma el valor actual del sem_mesada.
+            sem_getvalue(sem_mesada, &valor_mesada);
+
+            // Mientras que haya espacio en la mesada y no se hayan servido los 180 platos del día el mozo trabaja.
+            while (valor_mesada != 0 || *platos_del_dia < 180) {
+                int tipo_pedido;  // 0 FLANES, 1 ALBÓNDIGAS.
+                int cantidad;     // 4 maximo de albóndigas, 6 máximo de flanes.
+
+                // Toma un pedido en cada iteración.
+                tomar_pedido(tipo_pedido, cantidad);
+
+                if (tipo_pedido == 0) {
+                    // Pidieron flan. Se fija si la heladera está vacía.
+
+                    // Toma el valor actual del sem_heladera.
+                    sem_getvalue(sem_heladera, &valor_heladera);
+
+                    if (valor_heladera < 19) {
+                        // Hay al menos 6 flanes en la heladera (19 espacios libres).
+                        // Retira flanes hasta que haya conseguido la cantidad encargada.
+
+                        sem_wait(sem_mozo);
+                        while (cantidad > 0) {
+                            *heladera = *heladera - 1;
+                            printf("Quedan %d flanes en la heladera\n", *heladera);
+                            sem_post(sem_heladera);  // un espacio libre mas a la heladera.
+                            // Toma de nuevo el valor de la heladera para la próxima iteración.
+                            sem_getvalue(sem_heladera, &valor_heladera);
+                        }
+                        sem_post(sem_mozo);
+                    } else {
+                        sleep(1);  // espera.
+                    }
+
+                } else {
+                    // Pidieron albóndigas.
+
+                    // Toma el valor actual del sem_mesada.
+                    sem_getvalue(sem_mesada, &valor_mesada);
+
+                    if (valor_mesada < 23) {
+                        // Hay al menos 4 albondigas en la mesada (23 espacios libres).
+                        sem_wait(sem_mozo);
+                        while (cantidad > 0) {
+                            *mesada = *mesada - 1;
+                            printf("Quedan %d platos servidos en la mesada\n", *mesada);
+                            sem_post(sem_mesada);  // un espacio libre mas a la mesada.
+
+                            // Toma de nuevo el valor de la mesada para la próxima iteración.
+                            sem_getvalue(sem_mesada, &valor_mesada);
+                        }
+                        sem_post(sem_mozo);
+                    } else {
+                        sleep(1);  // espera.
+                    }
+                }
+            }
+
+            exit(0);
+        }
+    }
 
     // ================ FINAL DEL PROGRAMA ====================
     // Cerramos los descriptores de archivo de memoria compartida.

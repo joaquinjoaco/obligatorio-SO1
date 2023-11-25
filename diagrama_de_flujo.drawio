@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-        <mxGraphModel dx="1611" dy="860" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1698" dy="420" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="WIyWlLk6GJQsqaUBKTNV-0"/>
                 <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0"/>
@@ -99,8 +99,8 @@
                         <mxPoint x="-454.94000000000005" y="910" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="DdguFJmmc4Gt5296Z_hi-24" value="Llena la heladera" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-                    <mxGeometry x="-547.4100000000001" y="790" width="184.94" height="40" as="geometry"/>
+                <mxCell id="DdguFJmmc4Gt5296Z_hi-24" value="Llena la heladera&lt;br&gt;&lt;b&gt;(&lt;/b&gt;sem_wait(sem_heladera)&lt;b&gt;)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="-547.41" y="780" width="184.94" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="DdguFJmmc4Gt5296Z_hi-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="DdguFJmmc4Gt5296Z_hi-27" target="DdguFJmmc4Gt5296Z_hi-28" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -115,7 +115,7 @@
                         <mxPoint x="-514.94" y="450" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="DdguFJmmc4Gt5296Z_hi-27" value="¿Es el plato numero 180 del día?" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                <mxCell id="DdguFJmmc4Gt5296Z_hi-27" value="¿Ya se hicieron los 180 platos del día?" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
                     <mxGeometry x="-514.94" y="890" width="120" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="DdguFJmmc4Gt5296Z_hi-28" value="Se duerme" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">

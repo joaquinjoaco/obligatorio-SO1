@@ -19,7 +19,7 @@
 #include <time.h>
 #include <unistd.h>
 
-void preparar_flan() {
+void preparar_plato() {
     // Prepara un flan (dummy).
     printf("Preparando flan...\n");
     // srand(time(NULL));
@@ -63,17 +63,16 @@ int main() {
 
     // ========================================================
 
-    // ==== Semáforos HELADERA, REPOSTERO Y PLATOS DEL DIA ====
-    sem_t *sem_heladera, *sem_repostero, *sem_platos;
+    // ============ Semáforos HELADERA, REPOSTERO =============
+    sem_t *sem_heladera, *sem_repostero;
     // El valor del semáforo de la heladera representa la cantidad de espacios libres en la heladera.
     sem_heladera = sem_open("sem_heladera", O_CREAT, 0644, 0);    // sem heladera contador inicilizado en 0 (la cantina abre con la heladera llena. 0 espacios libres).
     sem_repostero = sem_open("sem_repostero", O_CREAT, 0644, 1);  // sem repostero binario inicilizado en 1.
-    sem_platos = sem_open("sem_platos", O_CREAT, 0644, 1);        // sem platos del día binario inicializado en 1.
-
     // ========================================================
 
-    // =============== Codigo del repostero ===================
+    // =============== Código del repostero ===================
     // TODO: CICLO DE LA CANTINA 12 MEDIODIA.
+
     // Tomamos el valor actual del semáforo de la heladera.
     int valor_heladera;
     sem_getvalue(sem_heladera, &valor_heladera);
@@ -83,27 +82,32 @@ int main() {
         // Está llena (0 espacios libres).
         printf("Heladera llena\n");
     } else {
-        // Está vacía (25 espacios libres).
         // Toma el valor actual del sem_heladera.
         sem_getvalue(sem_heladera, &valor_heladera);
 
-        // Procede a llenar la heladera.
-        while (valor_heladera != 0) {
-            preparar_flan();  // prepara el flan (espera un tiempo aleatorio).
+        // Procede a llenar la heladera si está vacía.
+        if (valor_heladera == 25) {
+            // 25 espacios libres (vacía).
+            while (valor_heladera != 0) {
+                // Cuando la heladera esté vacía va a guardar flanes.
 
-            // Secciones críticas.
-            sem_wait(sem_repostero);
-            *heladera = *heladera + 1;
-            printf("Quedan %d espacios libres en la heladera\n", valor_heladera);
-            sem_wait(sem_heladera);  // 1 espacio menos en la heladera.
-            sem_post(sem_repostero);
+                if (*platos_del_dia == 180) {
+                    printf("se hicieron los 180 platos");
+                    sem_wait(sem_repostero);
+                }
 
-            sem_wait(sem_platos);
-            *platos_del_dia = *platos_del_dia + 1;
-            printf("Plato numero %d del día\n", *platos_del_dia);
-            sem_post(sem_platos);
+                preparar_plato();  // prepara el flan (DUMMY).
 
-            sem_getvalue(sem_heladera, &valor_heladera);
+                // Secciones críticas.
+                sem_wait(sem_repostero);
+                *heladera = *heladera + 1;
+                printf("Quedan %d espacios libres en la heladera\n", valor_heladera);
+                sem_wait(sem_heladera);  // 1 espacio menos en la heladera.
+                sem_post(sem_repostero);
+
+                // Toma de nuevo el valor de la heladera para la próxima iteración.
+                sem_getvalue(sem_heladera, &valor_heladera);
+            }
         }
 
         if (valor_heladera == 0) {
@@ -126,9 +130,6 @@ int main() {
 
     sem_close(sem_repostero);
     sem_unlink("sem_repostero");
-
-    sem_close(sem_platos);
-    sem_unlink("sem_platos");
     // ========================================================
 
     return 0;
