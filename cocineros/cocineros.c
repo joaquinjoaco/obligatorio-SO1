@@ -29,6 +29,20 @@ void preparar_plato() {
     printf("Plato listo.\n");
 }
 
+void cerrar_cantina() {
+    // Cierra la cantina (dummy).
+    printf("Ordenando cantina...\n");
+    sleep(1);
+    printf("Recogiendo todos los platos...\n");
+    sleep(1);
+    printf("Lavando todos los platos...\n");
+    sleep(1);
+    printf("Guardando utensilios...\n");
+    sleep(1);
+    printf("Cerrando el local...\n");
+    sleep(1);
+}
+
 int main() {
     // Unlinks de semáforos por las dudas.
     sem_unlink("sem_mesada");
@@ -56,10 +70,10 @@ int main() {
 
     // Mapeamos las regiones de memoria a los punteros para poder acceder a ellas.
     mesada = (int *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd_mesada, 0);
-    *mesada = 0;  // La mesada abre con la mesada vacía.
+    *mesada = 0;  // La cantina abre con la mesada vacía.
 
     platos_del_dia = (int *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd_platos, 0);
-    *platos_del_dia = 0;  // La cantina abre con la cantidad de platos del día.
+    *platos_del_dia = 0;  // La cantina abre con la cantidad de platos del día en 0.
 
     // ========================================================
     // ===== Semáforos COCINERO, MESADA Y PLATOS DEL DIA =====
@@ -72,8 +86,6 @@ int main() {
     // ========================================================
 
     // ================ Código del cocinero ===================
-    // TODO: CICLO DE LA CANTINA 12 MEDIODIA.
-
     for (int i = 0; i < 3; i++)
     // SE CREAN 3 COCINEROS.
     {
@@ -84,43 +96,77 @@ int main() {
             int valor_mesada;
             sem_getvalue(sem_mesada, &valor_mesada);
 
-            // ¿Está vacía la mesada?
-            if (valor_mesada == 0) {
-                // Está llena (0 espacios libres).
-                printf("Mesada llena\n");
-            } else {
-                // Está vacía (27 espacios libres).
-                // Toma el valor actual del sem_mesada.
-                sem_getvalue(sem_mesada, &valor_mesada);
-
-                // Procede a llenar la mesada.
-                while (valor_mesada != 0) {
-                    if (*platos_del_dia == 180) {
-                        printf("se hicieron los 180 platos");
-                        sem_wait(sem_cocinero);
+            // Loop infinito necesario para poder hacer funcionar la cantina varios días.
+            // Cada iteración es un día distinto.
+            while (1) {
+                // Mientras no se hayan cocinado todos los platos del día el cocinero trabaja.
+                while (*platos_del_dia < 180) {
+                    // ¿Está vacía la mesada?
+                    // if (valor_mesada == 0) {
+                    if (*mesada == 27) {
+                        // Está llena (0 espacios libres).
+                        printf("Mesada llena, esperando...\n");
+                        sleep(1);
                     } else {
-                        // prepara el plato, función dummy (espera un tiempo aleatorio).
-                        preparar_plato();
-                        // Secciones críticas.
-                        sem_wait(sem_cocinero);
-                        *mesada = *mesada + 1;
-                        printf("Quedan %d espacios libres en la mesada\n", valor_mesada);
-                        sem_wait(sem_mesada);  // 1 espacio menos en la mesada.
-                        sem_post(sem_cocinero);
+                        // Está vacía (27 espacios libres).
+                        // Toma el valor actual del sem_mesada.
+                        sem_getvalue(sem_mesada, &valor_mesada);
 
-                        // actualiza los platos del día.
-                        sem_wait(sem_platos);
-                        *platos_del_dia = *platos_del_dia + 1;
-                        printf("Plato numero %d del día\n", *platos_del_dia);
-                        sem_post(sem_platos);
+                        // Procede a llenar la mesada.
+                        // while (valor_mesada != 0) {
+                        while (*mesada <= 27) {
+                            if (*platos_del_dia == 180) {
+                                printf("se hicieron los 180 platos");
+                                // sem_wait(sem_cocinero);
+
+                            } else {
+                                // prepara el plato, función dummy (espera un tiempo aleatorio).
+                                preparar_plato();
+                                // Secciones críticas.
+                                sem_wait(sem_cocinero);
+                                *mesada = *mesada + 1;
+                                printf("Quedan %d espacios libres en la mesada\n", valor_mesada);
+                                sem_wait(sem_mesada);  // 1 espacio menos en la mesada.
+                                sem_post(sem_cocinero);
+
+                                // actualiza los platos del día.
+                                sem_wait(sem_platos);
+                                *platos_del_dia = *platos_del_dia + 1;
+                                printf("Plato numero %d del día\n", *platos_del_dia);
+                                sem_post(sem_platos);
+
+                                sem_getvalue(sem_mesada, &valor_mesada);
+                            }
+                        }
 
                         sem_getvalue(sem_mesada, &valor_mesada);
+                        // if (valor_mesada == 0) {
+                        if (*mesada == 27) {
+                            printf("Mesada llena\n");
+                        }
                     }
                 }
 
-                sem_getvalue(sem_mesada, &valor_mesada);
-                if (valor_mesada == 0) {
-                    printf("Mesada llena\n");
+                // Si ya se hicieron los 180 platos del día
+                // se cierra la cantina y se vuelve a abrir.
+                if (*platos_del_dia == 180) {
+                    printf("se hicieron los 180 platos.\n");
+                    sem_wait(sem_cocinero);
+
+                    // Se cierra la cantina.
+                    cerrar_cantina();
+                    // Se abre la cantina nuevamente. Se reinician todos los valores.
+                    printf("Abriendo el local...\n");
+
+                    sem_close(sem_mesada);
+                    sem_unlink("sem_mesada");
+                    sem_mesada = sem_open("sem_mesada", O_CREAT, 0644, 27);  // sem mesada contador inicilizado en 27 (la cantina abre con la mesada vacía. 27 espacios libres).
+
+                    *platos_del_dia = 0;  // La cantina abre con la cantidad de platos del día en 0.
+                    *mesada = 0;          // La cantina abre con la mesada vacía.
+
+                    printf("¡Local abierto!\n");
+                    sem_post(sem_cocinero);
                 }
             }
 
